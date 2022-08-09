@@ -1,10 +1,12 @@
 from ib_insync import * 
 util.startLoop()
 import sys 
-import pandas as pd
 
 ib = IB()
 ib.connect('127.0.0.1', 7497, clientId=sys.argv[3])
+
+# print("HERE")
+# print(sys.argv[3])
 
 def fetch_daily(symbol, timeframe):
     try: 
