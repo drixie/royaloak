@@ -20,7 +20,7 @@ setGlobal({
   updateOrders: 1
 });
 
-console.log('MAIN.TSX');
+console.log('React: MAIN.TSX');
 
 ReactDOM.render(
   <React.StrictMode>

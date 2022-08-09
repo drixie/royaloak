@@ -14,8 +14,8 @@ import { IBApiNext, LogLevel, Contract, IBApiNextError, OrderBookUpdate, OrderBo
 import { IBApi, EventName, ErrorCode, Contract } from '@stoqey/ib';
 
 let ipcStream = null;
-const height = 800;
-const width = 1200;
+const height = 800 * 0.9;
+const width = 1200 * 0.9;
 
 function createWindow() {
   // Create the browser window.
@@ -34,6 +34,9 @@ function createWindow() {
     }
   });
 
+  // Open the DevTools.
+  window.webContents.openDevTools();
+
   const port = process.env.PORT || 3000;
   const url = isDev ? `http://localhost:${port}` : join(__dirname, '../src/out/index.html');
 
@@ -43,36 +46,33 @@ function createWindow() {
   } else {
     window?.loadFile(url);
   }
-  // Open the DevTools.
-  window.webContents.openDevTools();
 
   window.webContents.once('dom-ready', () => {
-    const { initLevels, pollIndicatorLevels } = require('./levels/publish');
-    initLevels(window.webContents);
-    pollIndicatorLevels(window.webContents);
-
-    const executeOrders = require('./orders/execute');
-    executeOrders(window.webContents);
-    ipcStream = window.webContents;
-
-    const account = require('./common/account-stream');
-    //account.on("error", error => console.log("error:", error))
-    //account.on("message", message => console.warn("message:", message))
-    account.once('authenticated', () => {
-      console.log('account stream authenticated');
-
-      account.subscribe('trade_updates');
-
-      account.on('trade_updates', (data) => {
-        if (data.event == 'fill') console.log(data);
-        if (data.event == 'fill' && ipcStream) {
-          ipcStream.send('data', {
-            type: 'order',
-            content: JSON.stringify(data)
-          });
-        }
-      });
-    });
+    // //
+    // // Npte: This is what triggers Python logging in.
+    // //
+    // // const { initLevels, pollIndicatorLevels } = require('./levels/publish');
+    // // initLevels(window.webContents);
+    // // pollIndicatorLevels(window.webContents);
+    // // const executeOrders = require('./orders/execute');
+    // // executeOrders(window.webContents);
+    // // ipcStream = window.webContents;
+    // // const account = require('./common/account-stream');
+    // // //account.on("error", error => console.log("error:", error))
+    // // //account.on("message", message => console.warn("message:", message))
+    // // account.once('authenticated', () => {
+    // //   console.log('LOG: Account stream authenticated');
+    // //   account.subscribe('trade_updates');
+    // //   account.on('trade_updates', (data) => {
+    // //     if (data.event == 'fill') console.log(data);
+    // //     if (data.event == 'fill' && ipcStream) {
+    // //       ipcStream.send('data', {
+    // //         type: 'order',
+    // //         content: JSON.stringify(data)
+    // //       });
+    // //     }
+    // //   });
+    // // });
   });
 
   // For AppBar
@@ -95,17 +95,19 @@ function createWindow() {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  console.log('APP WHEN READY');
   createWindow();
+  console.log('1 - createWindow()');
 
   installExtension(REACT_DEVELOPER_TOOLS)
-    .then((name) => console.log(`Added Extension:  ${name}`))
-    .catch((err) => console.log('An error occurred: ', err));
-
-  // app.whenReady().then(() => {
-  //   installExtension(REACT_DEVELOPER_TOOLS)
-  //     .then((name) => console.log(`Added Extension:  ${name}`))
-  //     .catch((err) => console.log('An error occurred: ', err));
-  // });
+    .then((name) => {
+      console.log(`2 - Added Extension:  ${name}`);
+      // console.log(`Added Extension:  ${name}`);
+      //window.webContents.openDevTools();
+    })
+    .catch((err) => {
+      console.log('An error occurred in adding extension: ', err);
+    });
 
   app.on('activate', () => {
     console.log('APP ACTIVATE');
@@ -117,7 +119,7 @@ app.whenReady().then(() => {
 });
 
 app.on('ready', () => {
-  console.log('APP READY');
+  console.log('APP ON READY');
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common

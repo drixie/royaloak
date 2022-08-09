@@ -1,9 +1,7 @@
 import { ipcRenderer, contextBridge } from 'electron';
-import {
-  IBApi,
-  EventName
-  //  ErrorCode, Contract
-} from '@stoqey/ib';
+import { IBApi, EventName, ErrorCode, Contract } from '@stoqey/ib';
+const Alpaca = require('@alpacahq/alpaca-trade-api');
+const { AlpacaStream } = require('@master-chief/alpaca');
 
 declare global {
   interface Window {
@@ -87,7 +85,21 @@ contextBridge.exposeInMainWorld('Main', api);
  */
 contextBridge.exposeInMainWorld('ipcRenderer', ipcRenderer);
 
-console.log('PLP');
+const alpaca = new Alpaca({
+  keyId: process.env.ALPACA_KEY,
+  secretKey: process.env.ALPACA_SECRET,
+  paper: process.env.NODE_ENV == 'development'
+});
+const account = new AlpacaStream({
+  credentials: {
+    key: process.env.ALPACA_KEY,
+    secret: process.env.ALPACA_SECRET,
+    paper: true
+  },
+  type: 'account'
+});
+console.log(alpaca);
+console.log(account);
 
 const ib = new IBApi({
   clientId: 1,
@@ -100,24 +112,37 @@ const ib = new IBApi({
 // let positionsCount = 0;
 
 ib.on(EventName.connected, () => {
-  console.log('CONNECTED IBApi');
-});
-// .on(EventName.error, (err: Error, code: ErrorCode, reqId: number) => {
-//   console.error(`${err.message} - code: ${code} - reqId: ${reqId}`);
-// })
-// .on(EventName.position, (account: string, contract: Contract, pos: number, avgCost?: number) => {
-//   console.log(`${account}: ${pos} x ${contract.symbol} @ ${avgCost}`);
-//   positionsCount++;
-// })
+  console.log('IBApi CONNECTED');
+  console.log(ib.isConnected);
+  console.log(ib.serverVersion);
+  // ib.reqPositions();
+})
+  .on(EventName.disconnected, () => {
+    console.log('IBApi DISCONNECTED');
+  })
+  .on(EventName.server, (serverVersion: number, serverConnectionTime: string) => {
+    console.log('SERVER VERSION');
+    console.log(serverVersion);
+    console.log(serverConnectionTime);
+  })
+  .on(EventName.error, (err: Error, code: ErrorCode, reqId: number) => {
+    console.error(`${err.message} - code: ${code} - reqId: ${reqId}`);
+  })
+  .on(EventName.position, (account: string, contract: Contract, pos: number, avgCost?: number) => {
+    console.log(`${account}: ${pos} x ${contract.symbol} @ ${avgCost}`);
+    // positionsCount++;
+  });
 // .once(EventName.positionEnd, () => {
 //   console.log(`Total: ${positionsCount} positions.`);
 //   ib.disconnect();
-// });
+// })
 
 // call API functions
 
-ib.connect();
 // ib.reqPositions();
+// ib.disconnect();
+
+ib.connect();
 
 //////
 
@@ -125,3 +150,5 @@ ib.connect();
 //DevTools failed to load source map: Could not load content for http://localhost:3000/api.js.map: HTTP error: status code 404, net::ERR_HTTP_RESPONSE_CODE_FAILURE
 
 // https://stackoverflow.com/questions/61339968/error-message-devtools-failed-to-load-sourcemap-could-not-load-content-for-chr?rq=1
+
+// https://github.com/electron/electron/issues/22996

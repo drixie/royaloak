@@ -5,6 +5,8 @@ import { ChakraProvider } from '@chakra-ui/react';
 import ResponsiveGrid from './grid';
 import useHotkeyOrders from './orders/hotkeys';
 
+import { IBApi, EventName, ErrorCode, Contract } from '@stoqey/ib';
+
 function App() {
   // console.log(window.ipcRenderer);
 
@@ -18,6 +20,53 @@ function App() {
   const [updatePositions, setUpdatePositions] = useGlobal('updatePositions');
   const [rules, setRules] = useGlobal('rules');
 
+  const [selectedAsset] = useGlobal('selectedAsset');
+
+  React.useEffect(() => {
+    // //   window.Main.on('data', (data: any) => {
+    // //     if (data.type == 'test') console.log('Test Data', data.content);
+    // //     // console.log(levels)
+    // //     if (data.type == 'levels') {
+    // //       const newLevels = levels;
+    // //       newLevels[data.content.symbol] = data.content.levels;
+    // //       setLevels(newLevels);
+    // //     }
+    // //     if (data.type == 'candles') {
+    // //       const newCandles = candles;
+    // //       newCandles[data.content.symbol] = data.content.candles;
+    // //       setCandles(newCandles);
+    // //     }
+    // //     if (data.type == 'order') {
+    // //       const order = JSON.parse(data.content).order;
+    // //       const updatedOrders = orders.filter((o) => o.id !== order.id);
+    // //       updatedOrders.push(order);
+    // //       setOrders(updatedOrders);
+    // //       setUpdatePositions((updatePositions) => !updatePositions);
+    // //       console.log(`Filled ${order.filled_qty} shares of ${order.symbol}`, order);
+    // //     }
+    // //     if (data.type == 'rule') {
+    // //       const newRules = rules.map((rule) => {
+    // //         if (rule.id === data.content.id) return data.content;
+    // //         return rule;
+    // //       });
+    // //       setRules(newRules);
+    // //     }
+    // //     if (data.type == 'rules') {
+    // //       setRules(data.content);
+    // //     }
+    // //   });
+    // //   window.Main.asyncData({ route: 'orders/get-many' }).then((response) => {
+    // //     if (response.data) {
+    // //       setOrders(response.data);
+    // //     }
+    // //   });
+    // //   window.Main.on('toast', (data) => {
+    // //     // TODO: Plug this into electron notification system. Otherwise, use Chakra UI toast
+    // //     // Focus on generating notifications only for error messages, order fulfillment and rules executions in order to minimize noise
+    // //     // console.log("toast notification", data)
+    // //   });
+  }, []);
+
   useEffect(() => {
     if (isSent && window.Main)
       window.Main.on('message', (message: string) => {
@@ -25,29 +74,6 @@ function App() {
       });
   }, [fromMain, isSent]);
 
-  React.useEffect(() => {
-    window.Main.on('toast', (data) => {
-      // TODO: Plug this into electron notification system. Otherwise, use Chakra UI toast
-      // Focus on generating notifications only for error messages, order fulfillment and rules executions in order to minimize noise
-      // console.log("toast notification", data)
-    });
-  }, []);
-
-  React.useEffect(() => {
-    window.Main.on('data', (data) => {
-      if (data.type == 'test') console.log('Test Data', data.content);
-    });
-  }, []);
-
-  // const [selectedAsset, setSelectedAsset] = useGlobal("selectedAsset")
-  // const [ hotkeys ] = useHotkeyOrders(selectedAsset)
-  // React.useEffect(() => {
-  //   hotkeys()
-  // }, [selectedAsset])
-
-  useHotkeyOrders();
-
-  const [selectedAsset] = useGlobal('selectedAsset');
   React.useEffect(() => {
     if (selectedAsset) {
       window.Main.sendData({
@@ -57,49 +83,13 @@ function App() {
     }
   }, [selectedAsset]);
 
-  React.useEffect(() => {
-    window.Main.on('data', (data: any) => {
-      // console.log(levels)
-      if (data.type == 'levels') {
-        const newLevels = levels;
-        newLevels[data.content.symbol] = data.content.levels;
-        setLevels(newLevels);
-      }
+  // const [selectedAsset, setSelectedAsset] = useGlobal("selectedAsset")
+  // const [ hotkeys ] = useHotkeyOrders(selectedAsset)
+  // React.useEffect(() => {
+  //   hotkeys()
+  // }, [selectedAsset])
 
-      if (data.type == 'candles') {
-        const newCandles = candles;
-        newCandles[data.content.symbol] = data.content.candles;
-        setCandles(newCandles);
-      }
-
-      if (data.type == 'order') {
-        const order = JSON.parse(data.content).order;
-        const updatedOrders = orders.filter((o) => o.id !== order.id);
-        updatedOrders.push(order);
-        setOrders(updatedOrders);
-        setUpdatePositions((updatePositions) => !updatePositions);
-        console.log(`Filled ${order.filled_qty} shares of ${order.symbol}`, order);
-      }
-
-      if (data.type == 'rule') {
-        const newRules = rules.map((rule) => {
-          if (rule.id === data.content.id) return data.content;
-          return rule;
-        });
-        setRules(newRules);
-      }
-
-      if (data.type == 'rules') {
-        setRules(data.content);
-      }
-    });
-
-    window.Main.asyncData({ route: 'orders/get-many' }).then((response) => {
-      if (response.data) {
-        setOrders(response.data);
-      }
-    });
-  }, []);
+  useHotkeyOrders();
 
   const handleToggle = () => {
     if (isOpen) {
