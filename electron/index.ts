@@ -5,33 +5,15 @@ import { io } from 'socket.io-client';
 const prodStream = io('https://nelson-z9ub6.ondigitalocean.app', { transports: ['websocket'] });
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { Subscription } from 'rxjs';
-import {
-  IBApiNext,
-  LogLevel,
-  Contract,
-  IBApiNextError,
-  OrderBookUpdate,
-  OrderBookRows,
-  SecType,
-  Contract,
-  Stock
-} from '@stoqey/ib';
+import { IBApiNext, LogLevel, Contract, IBApiNextError, OrderBookUpdate, OrderBookRows, SecType } from '@stoqey/ib';
 
 // Packages
 import { BrowserWindow, app, ipcMain, IpcMainEvent, IpcMainInvokeEvent } from 'electron';
 import isDev from 'electron-is-dev';
 
-import { ib } from './common/ib';
-import { alpaca, alpacaAccount } from './common/alpaca';
-
-const schedule = require('node-schedule');
-const pythonPromise = require('./common/python-promise');
-const quick = require('quick.db');
-const uuid = require('uuid').v4;
-
 let ipcStream = null;
-const height = 800 * 0.9;
-const width = 1200 * 0.9;
+const height = 800;
+const width = 1200;
 
 function createWindow() {
   // Create the browser window.
@@ -60,23 +42,26 @@ function createWindow() {
     window?.loadFile(url);
   }
   // Open the DevTools.
-  //window.webContents.openDevTools();
+  window.webContents.openDevTools();
 
   window.webContents.once('dom-ready', () => {
-    // Connect IB
-    ib.connect();
+    const { initLevels, pollIndicatorLevels } = require('./levels/publish');
+    initLevels(window.webContents);
+    pollIndicatorLevels(window.webContents);
 
-    // Connect Alpaca
+    const executeOrders = require('./orders/execute');
+    executeOrders(window.webContents);
     ipcStream = window.webContents;
-    // const account = require('./common/account-stream');
-    //  alpacaAccount.on("error", error => console.log("error:", error))
-    //  alpacaAccount.on("message", message => console.warn("message:", message))
-    alpacaAccount.once('authenticated', () => {
+
+    const account = require('./common/account-stream');
+    //account.on("error", error => console.log("error:", error))
+    //account.on("message", message => console.warn("message:", message))
+    account.once('authenticated', () => {
       console.log('account stream authenticated');
 
-      alpacaAccount.subscribe('trade_updates');
+      account.subscribe('trade_updates');
 
-      alpacaAccount.on('trade_updates', (data) => {
+      account.on('trade_updates', (data) => {
         if (data.event == 'fill') console.log(data);
         if (data.event == 'fill' && ipcStream) {
           ipcStream.send('data', {
@@ -86,70 +71,6 @@ function createWindow() {
         }
       });
     });
-
-    // const { initLevels, pollIndicatorLevels } = require('./levels/publish');
-    // initLevels(window.webContents);
-    const assets = quick.get('watchlist');
-    const symbols = assets.map((item) => item.symbol);
-    // window.webContents.send ("data", {type: "test", content: "now we are just testing from inside the initLevels inside levels/publish.js"})
-    const symbolLevels = symbols.map((symbol) => {
-      const channel = `${symbol}.levels`;
-      const data = quick.get(channel);
-      // if (data && window.webContents) {
-      //     window.webContents.emit("levels", {symbol: symbol, levels: data})
-      // }
-      if (data) {
-        window.webContents.send('data', {
-          type: 'levels',
-          content: { symbol: symbol, levels: data }
-        });
-      }
-    });
-    // const levels = publishLevels(symbols)
-    // ipc.send("data", {
-    //     type: "levels",
-    //     content: levels
-    // })
-    let clientId = 15;
-    let tickerId = 0;
-    let contract = { symbol: 'MSFT' } as Contract;
-    let endDateTime = '';
-    let durationStr = '6 D';
-    let barSizeSetting = '15 mins';
-    let whatToShow = 'TRADES';
-    let useRTH = 0; //false
-    let formatDate = 1; //1 or 2
-    let keepUpToDate = false;
-    const plp = ib.reqHistoricalData(
-      tickerId++,
-      new Stock('AAPL', 'ISLAND', 'USD'),
-      // contract,
-      endDateTime,
-      durationStr,
-      barSizeSetting,
-      whatToShow,
-      useRTH,
-      formatDate,
-      keepUpToDate
-    );
-    console.log(plp);
-
-    // // symbols.map((symbol) => {
-    // //   clientId++;
-    // //   pythonPromise('fetch/main.py', symbol, '15 mins', clientId)
-    // //     .then((result) => {
-    // //       const candles = JSON.parse(result);
-    // //       hydrateCandles(symbol, candles, socket);
-    // //       const levels = candles[candles.length - 2];
-    // //       hydrateIndicatorLevels(symbol, levels, socket);
-    // //     })
-    // //     .catch((error) => console.log(error, 'for', symbol));
-    // // });
-    // // });
-    // pollIndicatorLevels(window.webContents);
-
-    // const executeOrders = require('./orders/execute');
-    // executeOrders(window.webContents);
   });
 
   // For AppBar
@@ -174,11 +95,11 @@ function createWindow() {
 app.whenReady().then(() => {
   createWindow();
 
-  // app.whenReady().then(() => {
-  //   installExtension(REACT_DEVELOPER_TOOLS)
-  //     .then((name) => console.log(`Added Extension:  ${name}`))
-  //     .catch((err) => console.log('An error occurred: ', err));
-  // });
+  app.whenReady().then(() => {
+    installExtension(REACT_DEVELOPER_TOOLS)
+      .then((name) => console.log(`Added Extension:  ${name}`))
+      .catch((err) => console.log('An error occurred: ', err));
+  });
 
   app.on('activate', () => {
     // On macOS it's common to re-create a window in the app when the
