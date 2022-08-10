@@ -5,7 +5,17 @@ import { io } from 'socket.io-client';
 const prodStream = io('https://nelson-z9ub6.ondigitalocean.app', { transports: ['websocket'] });
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { Subscription } from 'rxjs';
-import { IBApiNext, LogLevel, Contract, IBApiNextError, OrderBookUpdate, OrderBookRows, SecType } from '@stoqey/ib';
+import {
+  IBApiNext,
+  LogLevel,
+  Contract,
+  IBApiNextError,
+  OrderBookUpdate,
+  OrderBookRows,
+  SecType,
+  Contract,
+  Stock
+} from '@stoqey/ib';
 
 // Packages
 import { BrowserWindow, app, ipcMain, IpcMainEvent, IpcMainInvokeEvent } from 'electron';
@@ -79,6 +89,63 @@ function createWindow() {
 
     // const { initLevels, pollIndicatorLevels } = require('./levels/publish');
     // initLevels(window.webContents);
+    const assets = quick.get('watchlist');
+    const symbols = assets.map((item) => item.symbol);
+    // window.webContents.send ("data", {type: "test", content: "now we are just testing from inside the initLevels inside levels/publish.js"})
+    const symbolLevels = symbols.map((symbol) => {
+      const channel = `${symbol}.levels`;
+      const data = quick.get(channel);
+      // if (data && window.webContents) {
+      //     window.webContents.emit("levels", {symbol: symbol, levels: data})
+      // }
+      if (data) {
+        window.webContents.send('data', {
+          type: 'levels',
+          content: { symbol: symbol, levels: data }
+        });
+      }
+    });
+    // const levels = publishLevels(symbols)
+    // ipc.send("data", {
+    //     type: "levels",
+    //     content: levels
+    // })
+    let clientId = 15;
+    let tickerId = 0;
+    let contract = { symbol: 'MSFT' } as Contract;
+    let endDateTime = '';
+    let durationStr = '6 D';
+    let barSizeSetting = '15 mins';
+    let whatToShow = 'TRADES';
+    let useRTH = 0; //false
+    let formatDate = 1; //1 or 2
+    let keepUpToDate = false;
+    const plp = ib.reqHistoricalData(
+      tickerId++,
+      new Stock('AAPL', 'ISLAND', 'USD'),
+      // contract,
+      endDateTime,
+      durationStr,
+      barSizeSetting,
+      whatToShow,
+      useRTH,
+      formatDate,
+      keepUpToDate
+    );
+    console.log(plp);
+
+    // // symbols.map((symbol) => {
+    // //   clientId++;
+    // //   pythonPromise('fetch/main.py', symbol, '15 mins', clientId)
+    // //     .then((result) => {
+    // //       const candles = JSON.parse(result);
+    // //       hydrateCandles(symbol, candles, socket);
+    // //       const levels = candles[candles.length - 2];
+    // //       hydrateIndicatorLevels(symbol, levels, socket);
+    // //     })
+    // //     .catch((error) => console.log(error, 'for', symbol));
+    // // });
+    // // });
     // pollIndicatorLevels(window.webContents);
 
     // const executeOrders = require('./orders/execute');

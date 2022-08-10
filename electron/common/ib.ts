@@ -30,7 +30,43 @@ ib.on(EventName.connected, () => {
   .on(EventName.position, (account: string, contract: Contract, pos: number, avgCost?: number) => {
     console.log(`${account}: ${pos} x ${contract.symbol} @ ${avgCost}`);
     // positionsCount++;
-  });
+  })
+  .on(
+    EventName.historicalData,
+    (reqId: number, timeInSeconds: string, open: number, high: number, low: number, close: number, volume: number) => {
+      console.log('HISTORICAL DATA');
+      // https://coder.social/stoqey/ib/issues/114
+      console.log(reqId);
+      // if (timeInSeconds.startsWith('finished')) {
+      //   client.unsubscribeFromGroupEvents(reqId);
+      // } else {
+      //   console.log('volume', volume);
+      // }
+    }
+  );
+
+// .on(EventName.all, (event: string, arguments: string[]) => {
+//   console.log('EVENT: ', event);
+//   console.log(arguments);
+// });
+
+// .on(
+//   EventName.historicalData,
+//   (
+//     reqId: number,
+//     time: string,
+//     open: number,
+//     high: number,
+//     low: number,
+//     close: number,
+//     volume: number,
+//     count: number,
+//     WAP: number,
+//     hasGaps: boolean
+//   ) => {
+//     //
+//   }
+// );
 // .once(EventName.positionEnd, () => {
 //   console.log(`Total: ${positionsCount} positions.`);
 //   ib.disconnect();
