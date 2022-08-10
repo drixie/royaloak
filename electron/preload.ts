@@ -20,27 +20,27 @@ const api = {
   },
 
   sendToast: (toast: object) => {
-    ipcRenderer.send("toast", toast)
+    ipcRenderer.send('toast', toast);
   },
 
   sendData: (data: any) => {
-    ipcRenderer.send("data", data)
+    ipcRenderer.send('data', data);
   },
 
   sendStream: (data: any) => {
-    ipcRenderer.send("stream", data)
+    ipcRenderer.send('stream', data);
   },
 
   sendSecondStream: (data: any) => {
-    ipcRenderer.send("second-stream", data)
+    ipcRenderer.send('second-stream', data);
   },
 
   sendMarketDepth: (data: any) => {
-    ipcRenderer.send("market-depth", data)
+    ipcRenderer.send('market-depth', data);
   },
 
   asyncData: async (data: any) => {
-    return await ipcRenderer.invoke("data", data)
+    return await ipcRenderer.invoke('data', data);
   },
   /**
     Here function for AppBar
@@ -64,16 +64,18 @@ const api = {
   once: (channel: string, callback: (data: any) => void) => {
     ipcRenderer.once(channel, (_, data) => callback(data));
   },
-  
+
   off: (channel: string, callback: (data: any) => void) => {
     ipcRenderer.removeListener(channel, (_, data) => callback(data));
   },
 
   reset: (channel: string) => {
-    ipcRenderer.removeAllListeners(channel)
+    ipcRenderer.removeAllListeners(channel);
   }
 };
+
 contextBridge.exposeInMainWorld('Main', api);
+
 /**
  * Using the ipcRenderer directly in the browser through the contextBridge ist not really secure.
  * I advise using the Main/api way !!

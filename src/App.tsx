@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { useGlobal } from "reactn";
+import { useGlobal } from 'reactn';
 import AppBar from './AppBar';
-import { ChakraProvider } from "@chakra-ui/react"
-import ResponsiveGrid from "./grid"
-import useHotkeyOrders from "./orders/hotkeys"
-
+import { ChakraProvider } from '@chakra-ui/react';
+import ResponsiveGrid from './grid';
+import useHotkeyOrders from './orders/hotkeys';
 
 function App() {
   // console.log(window.ipcRenderer);
@@ -12,8 +11,6 @@ function App() {
   const [isOpen, setOpen] = useState(false);
   const [isSent, setSent] = useState(false);
   const [fromMain, setFromMain] = useState<string | null>(null);
-
-  
 
   const handleToggle = () => {
     if (isOpen) {
@@ -41,18 +38,18 @@ function App() {
   }, [fromMain, isSent]);
 
   React.useEffect(() => {
-    window.Main.on("toast", data => {
+    window.Main.on('toast', (data) => {
       // TODO: Plug this into electron notification system. Otherwise, use Chakra UI toast
       // Focus on generating notifications only for error messages, order fulfillment and rules executions in order to minimize noise
       // console.log("toast notification", data)
-    })
-  }, [])
+    });
+  }, []);
 
   React.useEffect(() => {
-    window.Main.on("data", data => {
-      if (data.type == "test") console.log("Test Data", data.content)
-    })
-  }, []) 
+    window.Main.on('data', (data) => {
+      if (data.type == 'test') console.log('Test Data', data.content);
+    });
+  }, []);
 
   // const [selectedAsset, setSelectedAsset] = useGlobal("selectedAsset")
   // const [ hotkeys ] = useHotkeyOrders(selectedAsset)
@@ -60,71 +57,67 @@ function App() {
   //   hotkeys()
   // }, [selectedAsset])
 
-  useHotkeyOrders()
+  useHotkeyOrders();
 
-  const [selectedAsset] = useGlobal("selectedAsset")
-  React.useEffect( () => {
-      if (selectedAsset) {
-        window.Main.sendData({
-          type: "selected-asset",
-          content: selectedAsset
-        })
-      }
-  }, [selectedAsset])
-  
+  const [selectedAsset] = useGlobal('selectedAsset');
+  React.useEffect(() => {
+    if (selectedAsset) {
+      window.Main.sendData({
+        type: 'selected-asset',
+        content: selectedAsset
+      });
+    }
+  }, [selectedAsset]);
 
-  const [ levels, setLevels ] = useGlobal("levels")
-  const [ candles, setCandles ] = useGlobal("candles") 
-  const [ orders, setOrders ] = useGlobal("orders")
-  const [ updatePositions, setUpdatePositions ] = useGlobal("updatePositions")
-  const [ rules, setRules ] = useGlobal("rules")
-
+  const [levels, setLevels] = useGlobal('levels');
+  const [candles, setCandles] = useGlobal('candles');
+  const [orders, setOrders] = useGlobal('orders');
+  const [updatePositions, setUpdatePositions] = useGlobal('updatePositions');
+  const [rules, setRules] = useGlobal('rules');
 
   React.useEffect(() => {
-    window.Main.on("data", (data:any) => {
+    window.Main.on('data', (data: any) => {
       // console.log(levels)
-      if (data.type == "levels") {
-        const newLevels = levels
-        newLevels[data.content.symbol] = data.content.levels 
-        setLevels(newLevels)
+      if (data.type == 'levels') {
+        const newLevels = levels;
+        newLevels[data.content.symbol] = data.content.levels;
+        setLevels(newLevels);
       }
 
-      if (data.type == "candles") {
-        const newCandles = candles 
-        newCandles[data.content.symbol] = data.content.candles
-        setCandles(newCandles)
+      if (data.type == 'candles') {
+        const newCandles = candles;
+        newCandles[data.content.symbol] = data.content.candles;
+        setCandles(newCandles);
       }
 
-      if (data.type == "order") {
-        const order = JSON.parse(data.content).order
-        const updatedOrders = orders.filter(o => o.id !== order.id)
-        updatedOrders.push(order)
-        setOrders(updatedOrders)
-        setUpdatePositions( updatePositions => ! updatePositions)
-        console.log(`Filled ${order.filled_qty} shares of ${order.symbol}`, order)
+      if (data.type == 'order') {
+        const order = JSON.parse(data.content).order;
+        const updatedOrders = orders.filter((o) => o.id !== order.id);
+        updatedOrders.push(order);
+        setOrders(updatedOrders);
+        setUpdatePositions((updatePositions) => !updatePositions);
+        console.log(`Filled ${order.filled_qty} shares of ${order.symbol}`, order);
       }
 
-      if (data.type == "rule") {
-        const newRules = rules.map(rule => {
-          if (rule.id === data.content.id) return data.content
-          return rule
-        })
-        setRules(newRules)
+      if (data.type == 'rule') {
+        const newRules = rules.map((rule) => {
+          if (rule.id === data.content.id) return data.content;
+          return rule;
+        });
+        setRules(newRules);
       }
 
-      if (data.type == "rules") {
-        setRules(data.content)
+      if (data.type == 'rules') {
+        setRules(data.content);
       }
-    })
+    });
 
-    window.Main.asyncData({route: "orders/get-many"})
-    .then(response => {
+    window.Main.asyncData({ route: 'orders/get-many' }).then((response) => {
       if (response.data) {
-        setOrders(response.data)
+        setOrders(response.data);
       }
-    })
-
-  }, [])
+    });
+  }, []);
 
   return (
     <div className="flex flex-col h-screen">
@@ -133,6 +126,7 @@ function App() {
           <AppBar />
         </div>
       )}
+
       <div className="">
         <div className=" flex flex-col justify-center items-center h-full bg-gray-800 space-y-4">
           <h1 className="text-2xl text-gray-200">Vite + React + Typescript + Electron + Tailwind</h1>
@@ -170,9 +164,8 @@ function App() {
       </div>
       <div>
         <ChakraProvider>
-            <ResponsiveGrid />
+          <ResponsiveGrid />
         </ChakraProvider>
-                
       </div>
     </div>
   );
