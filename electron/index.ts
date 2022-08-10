@@ -2,7 +2,7 @@
 // @ts-nocheck
 import { join } from 'path';
 import { io } from 'socket.io-client';
-// // const prodStream = io("https://nelson-z9ub6.ondigitalocean.app", { transports: ["websocket"]})
+const prodStream = io('https://nelson-z9ub6.ondigitalocean.app', { transports: ['websocket'] });
 import installExtension, { REACT_DEVELOPER_TOOLS } from 'electron-devtools-installer';
 import { Subscription } from 'rxjs';
 
@@ -11,7 +11,14 @@ import { BrowserWindow, app, ipcMain, IpcMainEvent, IpcMainInvokeEvent } from 'e
 import isDev from 'electron-is-dev';
 
 import { IBApiNext, LogLevel, Contract, IBApiNextError, OrderBookUpdate, OrderBookRows, SecType } from '@stoqey/ib';
-import { IBApi, EventName, ErrorCode, Contract } from '@stoqey/ib';
+
+import { ib } from './common/ib';
+import { alpaca, alpacaAccount } from './common/alpaca';
+
+const schedule = require('node-schedule');
+const pythonPromise = require('./common/python-promise');
+const quick = require('quick.db');
+const uuid = require('uuid').v4;
 
 let ipcStream = null;
 const height = 800 * 0.9;
@@ -34,9 +41,6 @@ function createWindow() {
     }
   });
 
-  // Open the DevTools.
-  window.webContents.openDevTools();
-
   const port = process.env.PORT || 3000;
   const url = isDev ? `http://localhost:${port}` : join(__dirname, '../src/out/index.html');
 
@@ -47,48 +51,93 @@ function createWindow() {
     window?.loadFile(url);
   }
 
+  // Open the DevTools.
+  window.webContents.openDevTools();
+
   window.webContents.once('dom-ready', () => {
+    // Connect IB
+    ib.connect();
+
+    // Connect Alpaca
+    ipcStream = window.webContents;
+    // const alpacaAccount = require('./common/account-stream');
+    // alpacaAccount.on("error", error => console.log("error:", error))
+    // alpacaAccount.on("message", message => console.warn("message:", message))
+    alpacaAccount.once('authenticated', () => {
+      console.log('LOG: Account stream authenticated');
+      alpacaAccount.subscribe('trade_updates');
+      alpacaAccount.on('trade_updates', (data) => {
+        if (data.event == 'fill') console.log(data);
+        if (data.event == 'fill' && ipcStream) {
+          ipcStream.send('data', {
+            type: 'order',
+            content: JSON.stringify(data)
+          });
+        }
+      });
+    });
+
+    // this chunk is for initLevels()
+    const assets = quick.get('watchlist');
+    //console.log(assets);
+    const symbols = assets.map((item) => item.symbol);
+    const symbolLevels = symbols.map((symbol) => {
+      const channel = `${symbol}.levels`;
+      const data = quick.get(channel);
+      //console.log(data);
+      // if (data && pipe) {
+      //     pipe.emit("levels", {symbol: symbol, levels: data})
+      // }
+
+      if (data) {
+        window.webContents.send('data', {
+          type: 'levels',
+          content: { symbol: symbol, levels: data }
+        });
+      }
+    });
+
+    let clientId = 15;
+
+    // symbols.map((symbol) => {
+    //   clientId++;
+    //   pythonPromise('fetch/main.py', symbol, '15 mins', clientId)
+    //     .then((result) => {
+    //       const candles = JSON.parse(result);
+    //       hydrateCandles(symbol, candles, socket);
+    //       const levels = candles[candles.length - 2];
+    //       hydrateIndicatorLevels(symbol, levels, socket);
+    //     })
+    //     .catch((error) => console.log(error, 'for', symbol));
+    // });
+    // end chunk for initLevels()
+
     // //
-    // // Npte: This is what triggers Python logging in.
+    // // Note: This is what triggers Python logging in.
     // //
     // // const { initLevels, pollIndicatorLevels } = require('./levels/publish');
     // // initLevels(window.webContents);
     // // pollIndicatorLevels(window.webContents);
+    // //
     // // const executeOrders = require('./orders/execute');
     // // executeOrders(window.webContents);
-    // // ipcStream = window.webContents;
-    // // const account = require('./common/account-stream');
-    // // //account.on("error", error => console.log("error:", error))
-    // // //account.on("message", message => console.warn("message:", message))
-    // // account.once('authenticated', () => {
-    // //   console.log('LOG: Account stream authenticated');
-    // //   account.subscribe('trade_updates');
-    // //   account.on('trade_updates', (data) => {
-    // //     if (data.event == 'fill') console.log(data);
-    // //     if (data.event == 'fill' && ipcStream) {
-    // //       ipcStream.send('data', {
-    // //         type: 'order',
-    // //         content: JSON.stringify(data)
-    // //       });
-    // //     }
-    // //   });
-    // // });
+    // //
   });
 
   // For AppBar
-  ipcMain.on('minimize', () => {
-    // eslint-disable-next-line no-unused-expressions
-    window.isMinimized() ? window.restore() : window.minimize();
-    // or alternatively: win.isVisible() ? win.hide() : win.show()
-  });
-  ipcMain.on('maximize', () => {
-    // eslint-disable-next-line no-unused-expressions
-    window.isMaximized() ? window.restore() : window.maximize();
-  });
-
-  ipcMain.on('close', () => {
-    window.close();
-  });
+  ipcMain
+    .on('minimize', () => {
+      // eslint-disable-next-line no-unused-expressions
+      window.isMinimized() ? window.restore() : window.minimize();
+      // or alternatively: win.isVisible() ? win.hide() : win.show()
+    })
+    .on('maximize', () => {
+      // eslint-disable-next-line no-unused-expressions
+      window.isMaximized() ? window.restore() : window.maximize();
+    })
+    .on('close', () => {
+      window.close();
+    });
 }
 
 // This method will be called when Electron has finished
@@ -134,39 +183,39 @@ app.on('window-all-closed', () => {
 
 // const aggs = require("./aggs")
 
-// // prodStream.on("connect", () => {
-// //   console.log("connected to prod stream?", prodStream.connected)
-// //   const executeRules = require("./rules/execute")
+prodStream.on('connect', () => {
+  console.log('connected to prod stream?', prodStream.connected);
+  const executeRules = require('./rules/execute');
 
-// //   prodStream.on("alpaca-T", data => {
-// //     if (ipcStream) { // @ts-ignore
-// //       ipcStream.send("stream", data) // @ts-ignore
-// //       executeRules(ipcStream, data)
-// //     }
-// //   })
+  prodStream.on('alpaca-T', (data) => {
+    if (ipcStream) {
+      // @ts-ignore
+      ipcStream.send('stream', data); // @ts-ignore
+      executeRules(ipcStream, data);
+    }
+  });
 
-// //   prodStream.on("alpaca-AM", data => {
-// //     if (ipcStream) {
-// //       ipcStream.send("second-stream", data) // @ts-ignore
-// //     }
-// //   })
+  prodStream.on('alpaca-AM', (data) => {
+    if (ipcStream) {
+      ipcStream.send('second-stream', data); // @ts-ignore
+    }
+  });
 
-// //   // const params = {
-// //   //   pipeIn: prodStream,
-// //   //   pipeInChannel: "alpaca-T",
-// //   //   pipeOut: ipcStream,
-// //   //   pipeOutChannel: "second-stream",
-// //   //   interval: 60 * 1000,
-// //   //   dataMapping: {
-// //   //       price: "p",
-// //   //       size: "s",
-// //   //       date: "t",
-// //   //       symbol: "S",
-// //   //   }
-// //   // }
-// //   // aggs(params)
-
-// // })
+  // const params = {
+  //   pipeIn: prodStream,
+  //   pipeInChannel: "alpaca-T",
+  //   pipeOut: ipcStream,
+  //   pipeOutChannel: "second-stream",
+  //   interval: 60 * 1000,
+  //   dataMapping: {
+  //       price: "p",
+  //       size: "s",
+  //       date: "t",
+  //       symbol: "S",
+  //   }
+  // }
+  // aggs(params)
+});
 
 // console.log(account.getConnection())
 

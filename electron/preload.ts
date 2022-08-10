@@ -1,7 +1,6 @@
 import { ipcRenderer, contextBridge } from 'electron';
-import { IBApi, EventName, ErrorCode, Contract } from '@stoqey/ib';
-const Alpaca = require('@alpacahq/alpaca-trade-api');
-const { AlpacaStream } = require('@master-chief/alpaca');
+import { alpaca, alpacaAccount } from './common/alpaca';
+import { ib } from './common/ib';
 
 declare global {
   interface Window {
@@ -85,66 +84,19 @@ contextBridge.exposeInMainWorld('Main', api);
  */
 contextBridge.exposeInMainWorld('ipcRenderer', ipcRenderer);
 
-const alpaca = new Alpaca({
-  keyId: process.env.ALPACA_KEY,
-  secretKey: process.env.ALPACA_SECRET,
-  paper: process.env.NODE_ENV == 'development'
-});
-const account = new AlpacaStream({
-  credentials: {
-    key: process.env.ALPACA_KEY,
-    secret: process.env.ALPACA_SECRET,
-    paper: true
-  },
-  type: 'account'
-});
-console.log(alpaca);
-console.log(account);
-
-const ib = new IBApi({
-  clientId: 1,
-  host: '127.0.0.1',
-  port: 7497
-});
-
-// register event handler
-
-// let positionsCount = 0;
-
-ib.on(EventName.connected, () => {
-  console.log('IBApi CONNECTED');
-  console.log(ib.isConnected);
-  console.log(ib.serverVersion);
-  // ib.reqPositions();
-})
-  .on(EventName.disconnected, () => {
-    console.log('IBApi DISCONNECTED');
-  })
-  .on(EventName.server, (serverVersion: number, serverConnectionTime: string) => {
-    console.log('SERVER VERSION');
-    console.log(serverVersion);
-    console.log(serverConnectionTime);
-  })
-  .on(EventName.error, (err: Error, code: ErrorCode, reqId: number) => {
-    console.error(`${err.message} - code: ${code} - reqId: ${reqId}`);
-  })
-  .on(EventName.position, (account: string, contract: Contract, pos: number, avgCost?: number) => {
-    console.log(`${account}: ${pos} x ${contract.symbol} @ ${avgCost}`);
-    // positionsCount++;
-  });
-// .once(EventName.positionEnd, () => {
-//   console.log(`Total: ${positionsCount} positions.`);
-//   ib.disconnect();
-// })
-
-// call API functions
+// Start IB
+// console.log(ib);
 
 // ib.reqPositions();
 // ib.disconnect();
 
-ib.connect();
+// ib.connect();
 
 //////
+
+// Start Alpaca
+// console.log(alpaca);
+// console.log(alpacaAccount);
 
 // About Warning:
 //DevTools failed to load source map: Could not load content for http://localhost:3000/api.js.map: HTTP error: status code 404, net::ERR_HTTP_RESPONSE_CODE_FAILURE
