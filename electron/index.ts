@@ -80,14 +80,14 @@ function createWindow() {
 
       try {
         api.connect(Math.round(Math.random() * 16383));
-        // console.log(api.isConnected);
+        // console.log(api);
         const assets = quick.get('watchlist');
         const symbols = assets.map((item) => item.symbol);
         const symbolLevels = symbols.map((symbol) => {
           const channel = `${symbol}.levels`;
           const data = quick.get(channel);
-          // if (data && pipe) {
-          //     pipe.emit("levels", {symbol: symbol, levels: data})
+          // if (data && window.webContents) {
+          //   window.webContents.emit("levels", {symbol: symbol, levels: data})
           // }
 
           if (data) {
@@ -97,6 +97,30 @@ function createWindow() {
             });
           }
         });
+
+        // https://interactivebrokers.github.io/tws-api/basic_contracts.html
+        const contract: Contract = { secType: SecType.STK, currency: 'USD', symbol: 'TSLA', exchange: 'SMART' };
+        api
+          .getHistoricalData(
+            { secType: SecType.STK, currency: 'USD', symbol: 'TSLA', exchange: 'SMART' },
+            '', //   endDateTime: ""
+            '6 D', // durationStr
+            '15 mins', // barSizeSetting
+            'TRADES', // whatToShow
+            0, // false //useRTH
+            1 //formatDate
+          )
+          .then((res) => {
+            console.log('DATA');
+            console.log(res);
+          })
+          .catch((e) => {
+            console.log(e);
+          });
+
+        //  (contract: Contract, endDateTime: string | undefined, durationStr: string, barSizeSetting: BarSizeSetting, whatToShow: string, useRTH: number, formatDate: number)
+
+        //(contract: Contract, endDateTime: string, durationStr: string, barSizeSetting: BarSizeSetting, whatToShow: string, useRTH: number, formatDate: number): Promise<Bar[]>
 
         // let clientId = 15;
         // symbols.map((symbol) => {
