@@ -11,6 +11,8 @@ import { IBApiNext, LogLevel, Contract, IBApiNextError, OrderBookUpdate, OrderBo
 import { BrowserWindow, app, ipcMain, IpcMainEvent, IpcMainInvokeEvent } from 'electron';
 import isDev from 'electron-is-dev';
 
+const quick = require('quick.db');
+
 let ipcStream = null;
 const height = 800;
 const width = 1200;
@@ -44,7 +46,76 @@ function createWindow() {
   // Open the DevTools.
   window.webContents.openDevTools();
 
+  /** The [[IBApiNext]] instance. */
+  let api: IBApiNext = null;
+
+  /** The subscription on the IBApi errors. */
+  let error$: Subscription = null;
+
+  // the subscription on the market depth data
+  let subscription$: Subscription = null;
+
+  // last time we sent data to frontend
+  let lastdata: number = null;
+
+  // connection settings
+  const reconnectInterval: number = parseInt(process.env.IB_RECONNECT_INTERVAL) || 5000; // API reconnect retry interval
+  const host: string = process.env.IB_TWS_HOST || 'localhost'; // TWS host name or IP address
+  const ibport: number = parseInt(process.env.IB_TWS_PORT) || 4001; // API port
+  const rows: number = parseInt(process.env.IB_MARKET_ROWS) || 7; // Number of rows to return
+  const refreshing: number = parseFloat(process.env.IB_MARKET_REFRESH) || 0.5; // Threshold frequency limit for sending refreshing data to frontend in secs
+
   window.webContents.once('dom-ready', () => {
+    if (!api) {
+      api = new IBApiNext({ reconnectInterval, host, port: ibport });
+      // api.logLevel = LogLevel.DETAIL;
+      // this.error$ = api.errorSubject.subscribe((error) => {
+      //   console.log('ERROR SUBSCRIPTION');
+      //   console.log(error);
+      //   if (error.reqId === -1) {
+      //     // console.log('HERE');
+      //     console.log(`${error.error.message}`);
+      //   }
+      // });
+
+      try {
+        api.connect(Math.round(Math.random() * 16383));
+        // console.log(api.isConnected);
+        const assets = quick.get('watchlist');
+        const symbols = assets.map((item) => item.symbol);
+        const symbolLevels = symbols.map((symbol) => {
+          const channel = `${symbol}.levels`;
+          const data = quick.get(channel);
+          // if (data && pipe) {
+          //     pipe.emit("levels", {symbol: symbol, levels: data})
+          // }
+
+          if (data) {
+            window.webContents.send('data', {
+              type: 'levels',
+              content: { symbol: symbol, levels: data }
+            });
+          }
+        });
+
+        // let clientId = 15;
+        // symbols.map((symbol) => {
+        //   clientId++;
+        //   pythonPromise('fetch/main.py', symbol, '15 mins', clientId)
+        //     .then((result) => {
+        //       const candles = JSON.parse(result);
+        //       hydrateCandles(symbol, candles, socket);
+        //       const levels = candles[candles.length - 2];
+        //       hydrateIndicatorLevels(symbol, levels, socket);
+        //     })
+        //     .catch((error) => console.log(error, 'for', symbol));
+        // });
+      } catch (error) {
+        console.log('Connection error', error.message);
+        console.log(`IB host: ${host} - IB port: ${ibport}`);
+      }
+    }
+
     // // const { initLevels, pollIndicatorLevels } = require("./levels/publish")
     // // initLevels(window.webContents)
     // // pollIndicatorLevels(window.webContents)
@@ -57,7 +128,7 @@ function createWindow() {
     //account.on("error", error => console.log("error:", error))
     //account.on("message", message => console.warn("message:", message))
     account.once('authenticated', () => {
-      console.log('account stream authenticated');
+      console.log('ALPACA account stream authenticated');
 
       account.subscribe('trade_updates');
 
@@ -211,7 +282,7 @@ ipcMain.handle('data', async (event: IpcMainInvokeEvent, data: any) => {
   // watchlists/get-symbols
   // watchlists/remove-symbols
 
-  console.log(data);
+  // console.log(data);
 
   const resource = require('./' + data.route);
   try {
@@ -230,39 +301,22 @@ ipcMain.handle('data', async (event: IpcMainInvokeEvent, data: any) => {
     response = { status: 'error', content: e || `Could not add ${data.content} to the watchlist` };
   }
 
-  console.log(response);
+  // console.log(response);
 
   event.sender.send('toast', response);
   return response;
 });
 
-/** The [[IBApiNext]] instance. */
-let api: IBApiNext = null;
-
-/** The subscription on the IBApi errors. */
-let error$: Subscription = null;
-
-// the subscription on the market depth data
-let subscription$: Subscription = null;
-
-// last time we sent data to frontend
-let lastdata: number = null;
-
-// connection settings
-const reconnectInterval: number = parseInt(process.env.IB_RECONNECT_INTERVAL) || 5000; // API reconnect retry interval
-const host: string = process.env.IB_TWS_HOST || 'localhost'; // TWS host name or IP address
-const port: number = parseInt(process.env.IB_TWS_PORT) || 4001; // API port
-const rows: number = parseInt(process.env.IB_MARKET_ROWS) || 7; // Number of rows to return
-const refreshing: number = parseFloat(process.env.IB_MARKET_REFRESH) || 0.5; // Threshold frequency limit for sending refreshing data to frontend in secs
-
 // listen the channel `data` and resend the received message to the renderer process
 ipcMain.on('data', (event: IpcMainEvent, data: any) => {
-  console.log(data);
+  //console.log(data);
+
   // Connect to IB gateway
   if (!api) {
-    api = new IBApiNext({ reconnectInterval, host, port });
+    api = new IBApiNext({ reconnectInterval, host, ibport });
     api.logLevel = LogLevel.DETAIL;
     this.error$ = api.errorSubject.subscribe((error) => {
+      console.log('ERROR SUBSCRIPTION');
       console.log(error);
       if (error.reqId === -1) {
         // console.log('HERE');
