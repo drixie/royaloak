@@ -11,6 +11,8 @@ import { IBApiNext, LogLevel, Contract, IBApiNextError, OrderBookUpdate, OrderBo
 import { BrowserWindow, app, ipcMain, IpcMainEvent, IpcMainInvokeEvent } from 'electron';
 import isDev from 'electron-is-dev';
 
+import { ibnext } from './common/ib';
+
 const quick = require('quick.db');
 
 let ipcStream = null;
@@ -111,16 +113,12 @@ function createWindow() {
             1 //formatDate
           )
           .then((res) => {
-            console.log('DATA');
-            console.log(res);
+            //console.log('DATA');
+            //console.log(res);
           })
           .catch((e) => {
             console.log(e);
           });
-
-        //  (contract: Contract, endDateTime: string | undefined, durationStr: string, barSizeSetting: BarSizeSetting, whatToShow: string, useRTH: number, formatDate: number)
-
-        //(contract: Contract, endDateTime: string, durationStr: string, barSizeSetting: BarSizeSetting, whatToShow: string, useRTH: number, formatDate: number): Promise<Bar[]>
 
         // let clientId = 15;
         // symbols.map((symbol) => {
