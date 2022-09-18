@@ -1,4 +1,4 @@
-export const dev = true // True to enable logs inside the console
+export const dev = false // True to enable logs inside the console
 
 // Make requests to CryptoCompare API
 export async function makeApiRequest(path) {
@@ -52,10 +52,10 @@ export function newFrom(resolution, from) {
 export async function getBarsTillCountback (symbolInfo, resolution, from, to, firstDataRequest, countBack, onHistoryCallback, bars = [], offset = 0) {
 	try {
 		var data = await window.Main.chartHistoryData(symbolInfo.ticker, getIBCompatibleTimeframe(resolution), from*1000, to*1000, firstDataRequest);
-	console.log("[getBarsTillCountback]: bars:", data);
+	// console.log("[getBarsTillCountback]: bars:", data);
 	if (data.length == 0) {
 		if (offset > 5) {
-			console.log("[getBarsTillCountback] exhausted")
+			// console.log("[getBarsTillCountback] exhausted")
 			onHistoryCallback(bars, {
 				noData: true,
 			});

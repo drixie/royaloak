@@ -95,7 +95,6 @@ function MarketDepthConfig(props) {
     const obj = localMarketDepthConfig;
     obj[e.target.name] = e.target.value;
     setLocalMarketDepthConfig(obj);
-    console.log(localMarketDepthConfig)
   };
 
   // to populate config window from the db
@@ -104,7 +103,7 @@ function MarketDepthConfig(props) {
       route: "marketDepthConfig/get-config"
     });
     if (response.data) {
-      console.log("Received from db, use it to prepopulate the config settings for synced look")
+      // console.log("Received from db, use it to prepopulate the config settings for synced look")
     }
   }, [])
 
@@ -130,7 +129,7 @@ function MarketDepthConfig(props) {
         route: "marketDepthConfig/new",
         content: marketDepthConfig
       })
-     console.log("ipc response:  ", response);
+    //  console.log("ipc response:  ", response);
     //
     setSaveFor({ 'this-window': true, 'windows-default': false, 'current-asset': false });
     props.onClose();

@@ -64,7 +64,7 @@ async function getAllSymbols() {
 
 export default {
 	onReady: (callback) => {
-		console.log('[onReady]: Method call');
+		// console.log('[onReady]: Method call');
 		setTimeout(() => callback(configurationData));
 	},
 
@@ -74,7 +74,7 @@ export default {
 		symbolType,
 		onResultReadyCallback,
 	) => {
-		console.log('[searchSymbols]: Method call');
+		// console.log('[searchSymbols]: Method call');
 		const symbols = await getAllSymbols();
 		const newSymbols = symbols.filter(symbol => {
 			const isExchangeValid = exchange === '' || symbol.exchange === exchange;
@@ -124,7 +124,7 @@ export default {
 	getBars: async (symbolInfo, resolution, periodParams, onHistoryCallback, onErrorCallback) => {
 		const { from, to, firstDataRequest, countBack } = periodParams;
 		try {
-			if (!!countBack) {
+			if (countBack) {
 				getBarsTillCountback(symbolInfo, resolution, from, to, firstDataRequest, countBack, onHistoryCallback )
 				return
 			}
@@ -148,7 +148,7 @@ export default {
 		if (dev)
 		console.log('[subscribeBars]: Method call with subscribeUID:', subscribeUID);
 		window.Main.on("stream", (message) => {
-			console.log("[subscribeBars]: stream: ", message?.bar);
+			// console.log("[subscribeBars]: stream: ", message?.bar);
 			
 			onRealtimeCallback(message?.bar);
 		  });

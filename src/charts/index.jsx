@@ -11,7 +11,7 @@ const overrides = {
 	'symbolWatermarkProperties.visibility' : false,
 }
 
-const Chart = function() {
+function Chart() {
 	const [tvWidget, setTvWIdget] = useState();
 	const [selectedAsset, setSelectedAsset] = useGlobal("selectedAsset")
 		if (!selectedAsset) {
@@ -22,7 +22,7 @@ const Chart = function() {
 			})
 		  }
 	useEffect(() => {
-		console.log("[Chart] selectedAsset: ", selectedAsset);
+		// console.log("[Chart] selectedAsset: ", selectedAsset);
 		 setTvWIdget( new TradingView.widget({
 			symbol: !selectedAsset  ? 'NASDAQ:AAPL' : `NASDAQ:${selectedAsset}`, // default symbol
 			interval: '1D', // default interval
