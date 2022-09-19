@@ -21,32 +21,45 @@ function Chart() {
 			  content: selectedAsset
 			})
 		  }
-	useEffect(() => {
-		// console.log("[Chart] selectedAsset: ", selectedAsset);
-		 setTvWIdget( new TradingView.widget({
-			symbol: !selectedAsset  ? 'NASDAQ:AAPL' : `NASDAQ:${selectedAsset}`, // default symbol
-			interval: '1D', // default interval
-			fullscreen: false, // displays the chart in the fullscreen mode
-			container: 'tv_chart_container',
-			datafeed: Datafeed,
-			library_path: '/charting_library/',
-			autosize: true,
-			disabled_features: ["header_symbol_search", "header_compare", "symbol_search_hot_key", "header_screenshot", "main_series_scale_menu", "display_market_status", "timeframes_toolbar", "control_bar"],
-			enabled_features:["hide_left_toolbar_by_default", "hide_resolution_in_legend"],
-			overrides:overrides,
-			charts_storage_url: "http://saveload.tradingview.com/",
-			client_id: 'guerillatrader.com',
-			user_id: 'public_user_id1',	
-			}));
-		
-	}, [])
 	
 		useEffect(() => {
 			tvWidget?.onChartReady?.(()=>{
 				tvWidget?.activeChart?.().setSymbol?.(`NASDAQ:${selectedAsset}`);
 				if(dev) console.log("[onChartReady].[useEffect] selectedAsset changed to: ", selectedAsset);
+
+				tvWidget?.subscribe("onAutoSaveNeeded", function () {
+					tvWidget?.save(function (data) {
+						const response = window.Main.asyncData({
+							route: "chartsData/store",
+							content: data
+						})
+					});
+				});
 			});
-		}, [selectedAsset])
+		}, [selectedAsset,tvWidget])
+
+		useEffect(async () => {
+			const response = await window.Main.asyncData({
+			route: "chartsData/get"
+			});
+
+			setTvWIdget( new TradingView.widget({
+				symbol: !selectedAsset  ? 'NASDAQ:AAPL' : `NASDAQ:${selectedAsset}`, // default symbol
+				interval: '1D', // default interval
+				fullscreen: false, // displays the chart in the fullscreen mode
+				container: 'tv_chart_container',
+				datafeed: Datafeed,
+				library_path: '/charting_library/',
+				autosize: true,
+				disabled_features: ["header_symbol_search", "header_compare", "symbol_search_hot_key", "header_screenshot", "main_series_scale_menu", "display_market_status", "timeframes_toolbar", "control_bar"],
+				enabled_features:["hide_left_toolbar_by_default", "hide_resolution_in_legend"],
+				overrides:overrides,
+				// charts_storage_url: "http://saveload.tradingview.com/",
+				// client_id: 'guerillatrader.com',
+				// user_id: 'public_user_id1',	
+				saved_data: response.data,
+				}));
+		}, [])
 
 	
     return (
