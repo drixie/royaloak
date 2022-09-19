@@ -32,6 +32,8 @@ function DetailedMarketDepth(props) {
     var bidClass = [...bidClassname];
     var askClass = [...askClassname];
     marketDepthTable?.forEach((row,index)=>{
+      bidClass[row.i] = '';
+      askClass[row.i] = '';
       marketDepthConfig['global'].size?.forEach((sizeCondition,i)=> {
         bidClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) && !sizeCondition?.show ? "!invisible" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) ? `${sizeCondition?.color}` : bidClass[row.i];
         askClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) && !sizeCondition?.show ? "!invisible" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) ? `${sizeCondition?.color}` : askClass[row.i];
