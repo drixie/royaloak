@@ -33,13 +33,13 @@ function DetailedMarketDepth(props) {
     var askClass = [...askClassname];
     marketDepthTable?.forEach((row,index)=>{
       marketDepthConfig['global'].size?.forEach((sizeCondition,i)=> {
-        bidClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) && !sizeCondition?.show ? "!hidden" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) ? `${sizeCondition?.color}` : bidClass[row.i];
-        askClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) && !sizeCondition?.show ? "!hidden" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) ? `${sizeCondition?.color}` : askClass[row.i];
+        bidClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) && !sizeCondition?.show ? "!invisible" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) ? `${sizeCondition?.color}` : bidClass[row.i];
+        askClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) && !sizeCondition?.show ? "!invisible" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) ? `${sizeCondition?.color}` : askClass[row.i];
       // for asset specific configuration
         if (selectedAsset in marketDepthConfig) {
           for (let sizeCondition in marketDepthConfig[selectedAsset].size) {
-            bidClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) && !sizeCondition?.show ? "!hidden" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) ? `${sizeCondition?.color}` : bidClass[row.i];
-            askClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) && !sizeCondition?.show ? "!hidden" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) ? `${sizeCondition?.color}` : askClass[row.i];
+            bidClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) && !sizeCondition?.show ? "!invisible" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) ? `${sizeCondition?.color}` : bidClass[row.i];
+            askClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) && !sizeCondition?.show ? "!invisible" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) ? `${sizeCondition?.color}` : askClass[row.i];
           }
         }
       });
