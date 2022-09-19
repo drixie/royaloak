@@ -97,14 +97,10 @@ function MarketDepthConfig(props) {
     setLocalMarketDepthConfig(obj);
   };
 
-  // to populate config window from the db
+  // to populate config window from the global state to window state
   useEffect(async () => {
-    const response = await window.Main.asyncData({
-      route: "marketDepthConfig/get-config"
-    });
-    if (response.data) {
-      // console.log("Received from db, use it to prepopulate the config settings for synced look")
-    }
+    setSizeRows(marketDepthConfig?.global?.size)
+    setLocalMarketDepthConfig(marketDepthConfig?.global)
   }, [])
 
   //  save config to global state, save config to db, reset saveFor state, close window
@@ -124,12 +120,11 @@ function MarketDepthConfig(props) {
       config[selectedAsset].size = sizeRows;
       setMarketDepthConfig(config)
     }
-  //
+  // store data in the db on close
       const response = window.Main.asyncData({
         route: "marketDepthConfig/new",
         content: marketDepthConfig
       })
-    //  console.log("ipc response:  ", response);
     //
     setSaveFor({ 'this-window': true, 'windows-default': false, 'current-asset': false });
     props.onClose();

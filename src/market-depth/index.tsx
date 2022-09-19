@@ -5,6 +5,7 @@ import DetailedMarketDepth from './detailed';
 
 function MarketDepth(props: any) {
   const [selectedAsset] = useGlobal('selectedAsset' as never);
+  const [marketDepthConfig, setMarketDepthConfig] = useGlobal('marketDepthConfig' as never);
 
   const [marketDepthTable, setMarketDepthTable] = React.useState(null as any);
 
@@ -27,9 +28,15 @@ function MarketDepth(props: any) {
     window.Main.on('market-depth', (data) => handleMarketDepth(data));
   }, [handleMarketDepth]);
 
-  React.useEffect(() => {
-    window.Main.on('market-depth-window-settings', (data) => {});
-  }, []);
+  // to populate config window from the db
+  React.useEffect(async () => {
+    const response = await window.Main.asyncData({
+      route: "marketDepthConfig/get-config"
+    });
+    if (response.data) {
+      setMarketDepthConfig(response.data);
+    }
+  }, [])
 
   //console.log("selected asset", selectedAsset)
 
