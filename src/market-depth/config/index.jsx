@@ -112,13 +112,13 @@ function MarketDepthConfig(props) {
     let numOfRows = localMarketDepthConfig.numOfRows;
 
     if (saveFor['this-window']) {
-      const config = marketDepthConfig;
+      const config = {...marketDepthConfig};
       config.global.numOfRows = numOfRows ? numOfRows : config.global.numOfRows;
       config.global.size = sizeRows;
       setMarketDepthConfig(config)
     }
     if (saveFor['current-asset']) {
-      const config = marketDepthConfig;
+      const config = {...marketDepthConfig};
       config[selectedAsset] = {}
       config[selectedAsset].numOfRows = numOfRows ? numOfRows : config.global.numOfRows;
       config[selectedAsset].size = sizeRows;
@@ -209,7 +209,7 @@ function MarketDepthConfig(props) {
                     <div className="flex flex-row p-5">
                       <p>Number of Rows </p>&nbsp;{' '}
                       <p>
-                        <Input size="xs" name="numOfRows" onChange={handleInputChange} />
+                        <Input size="xs" name="numOfRows" value={localMarketDepthConfig.numOfRows} onChange={handleInputChange} />
                       </p>
                     </div>
                   </div>
@@ -232,7 +232,7 @@ function MarketDepthConfig(props) {
                         <TabPanel>
                        {sizeRows.map((row,index)=>(
                           <Stack key={row.id} direction="row" className="border-b p-3">
-                            <Select size="sm" name="condition" onChange={()=>setRowValue(event,index)}>
+                            <Select size="sm" name="condition" placeholder='Select option' isRequired={true} onChange={()=>setRowValue(event,index)}>
                               <option value=">=">&gt;=</option>
                               <option value=">">&gt;</option>
                               <option value="<=">&lt;=</option>
@@ -242,7 +242,7 @@ function MarketDepthConfig(props) {
                             <Stack direction="row">
                               <span>Show</span>
                               <span>
-                                <Switch colorScheme="green" size="sm" name='show' onChange={()=>setShowValue(event,index)}/>
+                                <Switch colorScheme="green" size="sm" name='show' value={sizeRows[index].show} onChange={()=>setShowValue(event,index)}/>
                               </span>
                             </Stack>
                             <Stack direction="row">

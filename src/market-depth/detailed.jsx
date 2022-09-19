@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGlobal } from 'reactn';
 import { SettingsIcon } from '@chakra-ui/icons';
 import { useDisclosure } from '@chakra-ui/react';
@@ -6,21 +6,49 @@ import MarketDepthConfig from './config';
 
 import { Table, Thead, Tbody, Tr, Th, Td } from '@chakra-ui/react';
 
+
+const evaluateCondition = (condition, conditionValue, rowValue) => {
+  switch(condition) {
+    case ">":
+        return rowValue > conditionValue;
+    case "<":
+        return rowValue < conditionValue;
+    case ">=":
+        return rowValue >= conditionValue;
+    case "<=":
+        return rowValue <= conditionValue;
+  }
+}
+
 function DetailedMarketDepth(props) {
   const { marketDepthTable } = props;
   const [selectedAsset] = useGlobal('selectedAsset');
+  const [marketDepthConfig] = useGlobal('marketDepthConfig');
+  const [bidClassname,setBidClassname] = useState(['']);
+  const [askClassname, setAskClassname] = useState(['']);
+
+  // Generate calsses from MarketDepth Configuration
+  React.useEffect(() => {
+    var bidClass = [...bidClassname];
+    var askClass = [...askClassname];
+    marketDepthTable?.forEach((row,index)=>{
+      marketDepthConfig['global'].size?.forEach((sizeCondition,i)=> {
+        bidClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) && !sizeCondition?.show ? "!hidden" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) ? `${sizeCondition?.color}` : bidClass[row.i];
+        askClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) && !sizeCondition?.show ? "!hidden" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) ? `${sizeCondition?.color}` : askClass[row.i];
+      // for asset specific configuration
+        if (selectedAsset in marketDepthConfig) {
+          for (let sizeCondition in marketDepthConfig[selectedAsset].size) {
+            bidClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) && !sizeCondition?.show ? "!hidden" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.bidSize) ? `${sizeCondition?.color}` : bidClass[row.i];
+            askClass[row.i] = evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) && !sizeCondition?.show ? "!hidden" : evaluateCondition(sizeCondition?.condition, sizeCondition?.value, row?.askSize) ? `${sizeCondition?.color}` : askClass[row.i];
+          }
+        }
+      });
+    });
+    setAskClassname(askClass);
+    setBidClassname(bidClass);
+  }, [marketDepthConfig, marketDepthTable])
 
   const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const rowColor = function (rowSize) {
-    if (rowSize > 50) {
-      return ' p-1 bg-yellow-300 ';
-    } else if (rowSize > 20) {
-      return ' p-1 bg-purple-300 ';
-    } else if (rowSize > 10) {
-      return ' p-1 bg-blue-300 ';
-    }
-  };
 
   let bidCount = 0;
   let askCount = 0;
@@ -28,7 +56,6 @@ function DetailedMarketDepth(props) {
   let askVolume = 0;
   let countDelta = 0;
   let volumeDelta = 0;
-  let table = null;
 
   if (marketDepthTable) {
     //console.log(marketDepthTable[marketDepthTable.length - 1])
@@ -38,7 +65,7 @@ function DetailedMarketDepth(props) {
       if (!isNaN(row.bidSize)) bidSizes.push(row.bidSize);
       if (!isNaN(row.askSize)) askSizes.push(row.askSize);
     });
-    //console.log("Bid Sizes", bidSizes)
+
     bidCount = bidSizes.length;
     bidVolume = bidSizes.reduce((acc, value) => {
       return acc + value;
@@ -78,7 +105,7 @@ function DetailedMarketDepth(props) {
           <span className="p-1">Ask Volume: {askVolume}</span>
         </div>
       </div>
-      <Table size="sm" variant="striped" colorScheme="gray">
+      <Table size="sm">
         <Thead>
           <Tr>
             <Th>#</Th>
@@ -96,18 +123,21 @@ function DetailedMarketDepth(props) {
             marketDepthTable.map((row, index) => {
               return (
                 <Tr key={row.bidMMID + row.bidPrice + row.askMMID + row.askPrice + index}>
-                  <Td>{index + 1}</Td>
-                  <Td>{row.bidMMID != 'DRCTEDGE' ? row.bidMMID : 'EDGE'}</Td>
-                  <Td>
-                    <span className={rowColor(row.bidSize)}>{row.bidSize}</span>
+                  
+                  <Td bg={bidClassname?.[row.i]} className={bidClassname?.[row.i]}>{index + 1}</Td>
+                  <Td bg={bidClassname?.[row.i]} className={bidClassname?.[row.i]}>{row.bidMMID != 'DRCTEDGE' ? row.bidMMID : 'EDGE'}</Td>
+                  <Td bg={bidClassname?.[row.i]} className={bidClassname?.[row.i]}>
+                    <span >{row.bidSize}</span>
                   </Td>
-                  <Td>{row.bidPrice}</Td>
-                  <Td>{row.askPrice}</Td>
-                  <Td>
-                    <span className={rowColor(row.askSize)}>{row.askSize}</span>
+                  <Td bg={bidClassname?.[row.i]} className={bidClassname?.[row.i]}>{row.bidPrice}</Td>
+                 
+                  <Td bg={askClassname?.[row.i]} className={askClassname?.[row.i]}>{row.askPrice}</Td>
+                  <Td bg={askClassname?.[row.i]} className={askClassname?.[row.i]}>
+                    <span className={askClassname?.[row.i]}>{row.askSize}</span>
                   </Td>
-                  <Td>{row.askMMID != 'DRCTEDGE' ? row.askMMID : 'EDGE'}</Td>
-                  <Td>{index + 1}</Td>
+                  <Td bg={askClassname?.[row.i]} className={askClassname?.[row.i]}>{row.askMMID != 'DRCTEDGE' ? row.askMMID : 'EDGE'}</Td>
+                  <Td bg={askClassname?.[row.i]} className={askClassname?.[row.i]}>{index + 1}</Td>
+                  
                 </Tr>
               );
             })

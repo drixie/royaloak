@@ -14,14 +14,14 @@ import {
 
 const rows = 8;                         // Number of rows to display
 
-const TimeAndSales = (props) => {
+function TimeAndSales(props) {
 
     const [selectedAsset] = useGlobal("selectedAsset");
 
     const [prices, setData] = React.useState(null);
 
     const handleData = React.useCallback((data) => {
-        console.log(data);
+        // console.log(data);
         if (data.symbol == selectedAsset) {
             // console.log("prices", prices);
             if (prices && (prices instanceof Array)) {
@@ -90,6 +90,6 @@ const TimeAndSales = (props) => {
     } else {
         return (<p>Time and Sales will be displayed here, select an asset to start.</p>);
     }
-};
+}
 
 export default TimeAndSales;
