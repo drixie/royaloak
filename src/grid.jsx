@@ -156,8 +156,8 @@ export default class ResponsiveGrid extends React.PureComponent {
                   <span className="font-semibold pl-2">Time And Sales</span>
               </div>
               <div className="p-2">
-                  {/* <Rules /> */}
-                </div>
+                <TimeAndSales />
+              </div>
           </div>
           <div 
             key="9"
